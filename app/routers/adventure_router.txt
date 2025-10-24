@@ -1,0 +1,65 @@
+from __future__ import annotations
+import uuid
+from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException, status, Header, Query
+from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.security import get_current_user
+from app.core.db import get_db
+from app.crud import adventure as adv_crud
+from app.models.enums import AdventureState
+
+router = APIRouter()
+
+class StartIn(BaseModel):
+    is_practice: bool = False
+    seed: str
+
+class StartOut(BaseModel):
+    id: uuid.UUID
+    seed: str
+
+class FinishIn(BaseModel):
+    adventure_id: uuid.UUID
+    status: str = AdventureState.SUCCESS.value
+    highest_floor_cleared: Optional[int] = None
+    time_spent_seconds: Optional[int] = None
+    level: Optional[int] = None
+    enemy_level: Optional[int] = None
+    enemies_defeated: Optional[int] = None
+    items_collected: Optional[list[str]] = None
+    node_types_cleared: Optional[list[int]] = None
+    best_sentence: Optional[str] = None
+    day_in_epoch_time: Optional[float] = None
+
+@router.post("/start", response_model=StartOut)
+async def start(
+    payload: StartIn,
+    me = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    force_new: bool = Query(default=True),
+):
+    if force_new:
+        await adv_crud.abandon_active_for_user(db, me.id)  # marks old as FAILED
+
+    adv = await adv_crud.create(db, me.id, payload.is_practice, seed=payload.seed)
+    return StartOut(id=adv.id, seed=adv.seed)
+
+@router.post("/finish")
+async def finish(
+    payload: FinishIn,
+    me = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+):
+    adv = await adv_crud.get_by_id_and_user(db, payload.adventure_id, me.id)
+    if not adv:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Adventure not found")
+
+    if adv.state != AdventureState.IN_PROGRESS.value:
+        return {"ok": True, "id": str(adv.id), "state": adv.state}
+
+    # use provided status; FAILED is valid and covers "abandoned"
+    await adv_crud.finish(db, adv, payload.status)
+    return {"ok": True, "id": str(adv.id), "state": payload.status}
