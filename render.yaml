@@ -26,8 +26,8 @@ services:
     secretFiles:
       - name: firebase_sa.json
 
-  # Redis as background service
-  - type: background_worker
+  # Redis as worker service
+  - type: worker
     name: redis
     env: docker
     image: redis:7-alpine
