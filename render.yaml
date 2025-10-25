@@ -23,15 +23,19 @@ services:
         sync: false
       - key: FIREBASE_CREDENTIALS
         value: /etc/secrets/firebase_sa.json
-    secretFiles:
+    secrets:
       - name: firebase_sa.json
 
-  # Redis as worker service
+  # Redis worker
   - type: worker
     name: redis
     env: docker
-    image: redis:7-alpine
+    dockerCommand: redis-server --appendonly yes
+    buildCommand: ""
+    dockerfilePath: ""
     autoDeploy: false
+    image:
+      url: redis:7-alpine
     disk:
       name: redis-data
       mountPath: /data
