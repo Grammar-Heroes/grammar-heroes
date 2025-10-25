@@ -1,0 +1,42 @@
+services:
+  # FastAPI web service
+  - type: web
+    name: grammar-heroes-api
+    env: docker
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    healthCheckPath: /healthz
+    startCommand: >
+      gunicorn -k uvicorn.workers.UvicornWorker -w 2
+      -b 0.0.0.0:$PORT app.main:app
+    preDeployCommand: alembic upgrade head
+    envVars:
+      - key: DATABASE_URL
+        sync: false            # set in dashboard
+      - key: DATABASE_URL_SYNC
+        sync: false
+      - key: REDIS_URL
+        value: redis://red-d3j23f1r0fns73aiso60:6379
+      - key: DEBUG
+        value: "false"
+      - key: SAPLING_API_KEY
+        sync: false
+      - key: FIREBASE_CREDENTIALS
+        value: /etc/secrets/firebase_sa.json
+    secretFiles:
+      - name: firebase_sa.json # paste your JSON in the Render UI
+
+  # Redis as a Private Service
+  - type: private_service
+    name: red-d3j23f1r0fns73aiso60
+    env: docker
+    image: redis:7-alpine
+    autoDeploy: false
+    command: redis-server --appendonly yes
+    ports:
+      - port: 6379
+        protocol: tcp
+    disk:
+      name: redis-data
+      mountPath: /data
+      sizeGB: 1
