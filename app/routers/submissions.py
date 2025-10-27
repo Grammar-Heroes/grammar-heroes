@@ -51,6 +51,7 @@ async def submit(
     # ─────────────────────────────
     # 3. Grammar evaluation
     # ─────────────────────────────
+    # res = await check_sentence(payload.sentence, payload.kc_id, payload.tier_id)
     res = await check_sentence(payload.sentence, payload.kc_id)
     is_correct = bool(res.get("is_correct", False))
     feedback = list(res.get("feedback", []))

@@ -25,6 +25,13 @@ async def me_route(me=Depends(get_current_user)):
         "achievements_unlocked": list(me.achievements_unlocked or []),
         "currency_notes": me.currency_notes,
         "total_adventures_cleared": me.total_adventures_cleared,
+
+        # New stats
+        "recorded_items": list(me.recorded_items or []),
+        "total_parry_counts": me.total_parry_counts,
+        "total_enemies_defeated": me.total_enemies_defeated,
+        "total_damage_received": me.total_damage_received,
+        "total_damage_dealt": me.total_damage_dealt,
     }
 
 @router.get("/display-name/availability", response_model=NameAvailabilityOut)
@@ -76,6 +83,11 @@ async def update_user_me(
         "achievements_unlocked",
         "currency_notes",
         "total_adventures_cleared",
+        "recorded_items",
+        "total_parry_counts",
+        "total_enemies_defeated",
+        "total_damage_received",
+        "total_damage_dealt",
     ]
     for field in update_fields:
         value = getattr(payload, field, None)
@@ -98,4 +110,9 @@ async def update_user_me(
         "achievements_unlocked": list(user.achievements_unlocked or []),
         "currency_notes": user.currency_notes,
         "total_adventures_cleared": user.total_adventures_cleared,
+        "recorded_items": list(user.recorded_items or []),
+        "total_parry_counts": user.total_parry_counts,
+        "total_enemies_defeated": user.total_enemies_defeated,
+        "total_damage_received": user.total_damage_received,
+        "total_damage_dealt": user.total_damage_dealt,
     }

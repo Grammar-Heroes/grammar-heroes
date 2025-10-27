@@ -5,6 +5,10 @@ class SubmissionIn(BaseModel):
     kc_id: int
     sentence: str
     is_practice: bool = False
+    # for new system
+    # tier_id: int | None = None           # <— add
+    # prompt_uid: str | None = None  
+
 
 class SubmissionOut(BaseModel):
     is_correct: bool

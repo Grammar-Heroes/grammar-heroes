@@ -38,6 +38,13 @@ async def bootstrap(me=Depends(get_current_user), db: AsyncSession = Depends(get
         achievements_unlocked=list(me.achievements_unlocked or []),
         currency_notes=_ival(getattr(me, "currency_notes", None), 0),
         total_adventures_cleared=_ival(getattr(me, "total_adventures_cleared", None), 0),
+
+        # New fields
+        recorded_items=list(me.recorded_items or []),
+        total_parry_counts=_ival(getattr(me, "total_parry_counts", None), 0),
+        total_enemies_defeated=_ival(getattr(me, "total_enemies_defeated", None), 0),
+        total_damage_received=_ival(getattr(me, "total_damage_received", None), 0),
+        total_damage_dealt=_ival(getattr(me, "total_damage_dealt", None), 0),
     )
 
     adv_out = None

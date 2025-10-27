@@ -3,7 +3,7 @@ from typing import List, Optional
 from uuid import UUID
 
 class UserOut(BaseModel):
-    id: str = Field(..., description="User ID as string")
+    id: str
     email: str
     display_name: Optional[str]
     profile_picture: Optional[str]
@@ -16,10 +16,14 @@ class UserOut(BaseModel):
     currency_notes: int = 0
     total_adventures_cleared: int = 0
 
-    model_config = ConfigDict(
-        from_attributes=True,
-        json_encoders={UUID: lambda v: str(v)},   # ← active in Pydantic v2
-    )
+    # New fields
+    recorded_items: List[str] = []
+    total_parry_counts: int = 0
+    total_enemies_defeated: int = 0
+    total_damage_received: int = 0
+    total_damage_dealt: int = 0
+
+    model_config = ConfigDict(from_attributes=True, json_encoders={UUID: lambda v: str(v)})
 
 
 class UserUpdateIn(BaseModel):
@@ -33,6 +37,13 @@ class UserUpdateIn(BaseModel):
     achievements_unlocked: Optional[List[str]]
     currency_notes: Optional[int]
     total_adventures_cleared: Optional[int]
+
+    # New fields
+    recorded_items: Optional[List[str]]
+    total_parry_counts: Optional[int]
+    total_enemies_defeated: Optional[int]
+    total_damage_received: Optional[int]
+    total_damage_dealt: Optional[int]
 
 
 class DisplayNameIn(BaseModel):

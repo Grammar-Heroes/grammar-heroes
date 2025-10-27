@@ -4,6 +4,8 @@ from typing import Dict, List, Optional
 from app.utils.normalize import normalize_sentence
 from app.utils.redis_cache import get_sentence_cache, set_sentence_cache
 from app.core.config import settings
+# from app.services.kc_answer_bank import contains as bank_contains, best_match as bank_best_match
+
 
 logger = logging.getLogger("grammar_cache")
 
@@ -96,3 +98,46 @@ async def check_sentence(sentence: str, kc_id: Optional[int] = None) -> Dict[str
 
     await set_sentence_cache(normalized, kc_id, result)
     return result
+
+
+# New System
+# async def check_sentence(sentence: str, kc_id: Optional[int] = None, tier_id: Optional[int] = None) -> Dict[str, object]:
+#     normalized = normalize_sentence(sentence)
+#     cached = await get_sentence_cache(normalized, kc_id)
+#     if cached:
+#         logger.info("[CACHE HIT] %s", normalized)
+#         cached["from_cache"] = True
+#         return cached
+
+#     # ---------- KC/Tier membership short-circuit ----------
+#     if kc_id is not None and bank_contains(int(kc_id), sentence, tier_id):
+#         result = {
+#             "is_correct": True,
+#             "error_indices": [],
+#             "feedback": [],
+#             "scores": {"sapling_edits": 0},
+#             "candidates": [],
+#             "best_candidate": sentence,
+#             "from_cache": False,
+#         }
+#         await set_sentence_cache(normalized, kc_id, result)
+#         return result
+
+#     # ---------- fall through to existing checker (Sapling/T5 later) ----------
+#     sapling = await _sapling_check(sentence)
+#     feedback = _extract_feedback(sapling)
+#     correct = _is_correct(sapling)
+#     edits = sapling.get("edits", []) if sapling else []
+#     indices = _extract_error_indices(sentence, edits)
+
+#     result = {
+#         "is_correct": correct,
+#         "error_indices": indices,
+#         "feedback": feedback,
+#         "scores": {"sapling_edits": len(edits)},
+#         "candidates": [],
+#         "best_candidate": (bank_best_match(int(kc_id), sentence, tier_id) if kc_id else sentence),
+#         "from_cache": False,
+#     }
+#     await set_sentence_cache(normalized, kc_id, result)
+#     return result

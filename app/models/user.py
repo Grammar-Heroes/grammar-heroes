@@ -22,6 +22,14 @@ class User(Base):
     achievements_unlocked: Mapped[dict] = mapped_column(JSONB, default=list)
     currency_notes: Mapped[int] = mapped_column(Integer, default=0)
     total_adventures_cleared: Mapped[int] = mapped_column(Integer, default=0)
+
+    # New fields
+    recorded_items: Mapped[dict] = mapped_column(JSONB, default=list)
+    total_parry_counts: Mapped[int] = mapped_column(Integer, default=0)
+    total_enemies_defeated: Mapped[int] = mapped_column(Integer, default=0)
+    total_damage_received: Mapped[int] = mapped_column(Integer, default=0)
+    total_damage_dealt: Mapped[int] = mapped_column(Integer, default=0)
+    
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
