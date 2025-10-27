@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, Optional
 
 class AdventureOut(BaseModel):
     id: str
@@ -24,6 +24,8 @@ class AdventureOut(BaseModel):
     node_types_cleared: list[int] = []
     correct_submissions: int = 0
     incorrect_submissions: int = 0
+    total_damage_dealt: int = 0
+    total_damage_received: int = 0
     
 
 class AdventureStartIn(BaseModel):
@@ -49,15 +51,21 @@ class AdventureProgressIn(BaseModel):
     node_types_cleared: list[int] | None = None
     correct_submissions: int | None = None
     incorrect_submissions: int | None = None
+    total_damage_dealt: int | None = None
+    total_damage_received: int | None = None
 
 class AdventureFinishIn(BaseModel):
-    status: str  # Success or Failed
+    status: str
     day_in_epoch_time: int
     highest_floor_cleared: int
     time_spent_seconds: int
-    items_collected: list[str] = []
-    node_types_cleared: list[int] = []
+    items_collected: list[str]
+    node_types_cleared: list[int]
     level: int
     enemy_level: int
     enemies_defeated: int
     best_sentence: str | None = None
+
+    # ✅ NEW
+    total_damage_dealt: int = 0
+    total_damage_received: int = 0

@@ -30,6 +30,10 @@ class Adventure(Base):
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     enemies_defeated: Mapped[int] = mapped_column(Integer, default=0)
+    # new columns
+    total_damage_dealt: Mapped[int] = mapped_column(Integer, default=0)
+    total_damage_received: Mapped[int] = mapped_column(Integer, default=0)
+    # end of new columns
     reward_hero_pass_exp: Mapped[int] = mapped_column(Integer, default=0)
     reward_notes: Mapped[int] = mapped_column(Integer, default=0)
     node_types_cleared: Mapped[list] = mapped_column(JSONB, default=list)  # [normal, elite, boss]

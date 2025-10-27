@@ -48,4 +48,8 @@ class AdventureSummary(Base):
     worst_kc_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     best_sentence: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
+    # new
+    total_damage_dealt = mapped_column(Integer, default=0)
+    total_damage_received = mapped_column(Integer, default=0)
+
     adventure = relationship("Adventure", back_populates="summary")

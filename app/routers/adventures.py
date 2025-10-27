@@ -15,17 +15,19 @@ from app.utils.idempotency import ensure_idempotent
 
 router = APIRouter()
 
+# ──────────────────────────────────────────────
+# START
+# ──────────────────────────────────────────────
 @router.post("/start", response_model=AdventureOut)
 async def start(
     payload: AdventureStartIn,
     me = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-    force_new: bool = Query(True),  # default: fail lingering run and create new
+    force_new: bool = Query(True),
 ):
     existing = await adv_crud.get_active_for_user(db, me.id)
 
     if existing and force_new:
-        # treat “abandoned” as FAILED so a new row will be created
         await adv_crud.abandon_active_for_user(db, me.id)
         existing = None
 
@@ -55,8 +57,16 @@ async def start(
         node_types_cleared=list(adv.node_types_cleared or []),
         correct_submissions=adv.correct_submissions,
         incorrect_submissions=adv.incorrect_submissions,
+
+        # ─── NEW FIELDS ───
+        total_damage_dealt=adv.total_damage_dealt,
+        total_damage_received=adv.total_damage_received,
     )
 
+
+# ──────────────────────────────────────────────
+# PROGRESS
+# ──────────────────────────────────────────────
 @router.patch("/progress", response_model=AdventureOut)
 async def progress(
     payload: AdventureProgressIn,
@@ -94,8 +104,16 @@ async def progress(
         node_types_cleared=list(adv.node_types_cleared or []),
         correct_submissions=adv.correct_submissions,
         incorrect_submissions=adv.incorrect_submissions,
+
+        # ─── NEW FIELDS ───
+        total_damage_dealt=adv.total_damage_dealt,
+        total_damage_received=adv.total_damage_received,
     )
 
+
+# ──────────────────────────────────────────────
+# FINISH
+# ──────────────────────────────────────────────
 @router.post("/finish")
 async def finish(
     payload: AdventureFinishIn,
@@ -111,6 +129,10 @@ async def finish(
         return {"message": "duplicate"}
 
     adv = await adv_crud.finish(db, adv, payload.status)
+
+    # ✅ persist damage totals
+    adv.total_damage_dealt = payload.total_damage_dealt
+    adv.total_damage_received = payload.total_damage_received
 
     res = await db.execute(select(AdventureKCStat).where(AdventureKCStat.adventure_id == adv.id))
     rows = res.scalars().all()
@@ -138,6 +160,8 @@ async def finish(
         best_kc_id=best_kc,
         worst_kc_id=worst_kc,
         best_sentence=payload.best_sentence,
+        total_damage_dealt=payload.total_damage_dealt,
+        total_damage_received=payload.total_damage_received,
     )
 
     from app.crud.adventure_stats import create_summary

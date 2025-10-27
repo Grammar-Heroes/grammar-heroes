@@ -111,10 +111,12 @@ async def get_adventure_summary(adventure_id: str, me=Depends(get_current_user),
         adv_id = uuid.UUID(adventure_id)
     except Exception:
         raise HTTPException(status_code=422, detail="Invalid adventure_id")
+
     res = await db.execute(select(AdventureSummary).where(AdventureSummary.adventure_id == adv_id))
     row = res.scalar_one_or_none()
     if not row:
         raise HTTPException(status_code=404, detail="Summary not found")
+
     return AdventureSummaryOut(
         status=row.status,
         day_in_epoch_time=row.day_in_epoch_time,
@@ -128,7 +130,12 @@ async def get_adventure_summary(adventure_id: str, me=Depends(get_current_user),
         best_kc_id=row.best_kc_id,
         worst_kc_id=row.worst_kc_id,
         best_sentence=row.best_sentence,
+
+        # ✅ NEW
+        total_damage_dealt=row.total_damage_dealt,
+        total_damage_received=row.total_damage_received,
     )
+
 
 @router.patch("/adventures/{adventure_id}/summary", response_model=AdventureSummaryOut)
 async def patch_adventure_summary(adventure_id: str, payload: AdventureSummaryPatchIn, me=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
@@ -136,12 +143,22 @@ async def patch_adventure_summary(adventure_id: str, payload: AdventureSummaryPa
         adv_id = uuid.UUID(adventure_id)
     except Exception:
         raise HTTPException(status_code=422, detail="Invalid adventure_id")
+
     res = await db.execute(select(AdventureSummary).where(AdventureSummary.adventure_id == adv_id))
     row = res.scalar_one_or_none()
     if not row:
-        row = AdventureSummary(adventure_id=adv_id, status="Success", day_in_epoch_time=0,
-                               highest_floor_cleared=0, time_spent_seconds=0,
-                               level=1, enemy_level=1, enemies_defeated=0)
+        row = AdventureSummary(
+            adventure_id=adv_id,
+            status="Success",
+            day_in_epoch_time=0,
+            highest_floor_cleared=0,
+            time_spent_seconds=0,
+            level=1,
+            enemy_level=1,
+            enemies_defeated=0,
+            total_damage_dealt=0,            # ✅ initialize
+            total_damage_received=0,         # ✅ initialize
+        )
         db.add(row)
 
     data = payload.model_dump(exclude_unset=True)
@@ -151,12 +168,13 @@ async def patch_adventure_summary(adventure_id: str, payload: AdventureSummaryPa
     await db.commit()
     return await get_adventure_summary(adventure_id, me, db)
 
+
 @router.get("/history", response_model=list[AdventureSummaryWithIdOut])
 async def list_adventure_history(me=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     q = (
         select(AdventureSummary)
-        .join(AdventureSummary.adventure)              # FK → Adventure
-        .where(Adventure.user_id == me.id)            # only my adventures
+        .join(AdventureSummary.adventure)
+        .where(Adventure.user_id == me.id)
         .order_by(AdventureSummary.day_in_epoch_time.desc())
     )
     rows = (await db.execute(q)).scalars().all()
@@ -176,6 +194,10 @@ async def list_adventure_history(me=Depends(get_current_user), db: AsyncSession 
             best_kc_id=r.best_kc_id,
             worst_kc_id=r.worst_kc_id,
             best_sentence=r.best_sentence,
+
+            # ✅ NEW
+            total_damage_dealt=r.total_damage_dealt,
+            total_damage_received=r.total_damage_received,
         )
         for r in rows
     ]
