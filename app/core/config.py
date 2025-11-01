@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     DATABASE_URL_SYNC: str | None = None
     REDIS_URL: str | None = None          
     FIREBASE_CREDENTIALS: str | None = None
-    SAPLING_API_KEY: str | None = None
+    TFIVEBASE: str | None = None
     DEBUG: bool = False
 
     class Config:

@@ -9,8 +9,7 @@ from app.core.config import settings
 
 logger = logging.getLogger("grammar_cache")
 
-SAPLING_API_URL = "https://api.sapling.ai/api/v1/edits"
-SAPLING_API_KEY = settings.SAPLING_API_KEY
+TFIVEBASE = settings.TFIVEBASE
 
 
 # ---------------- Sapling Call ----------------
@@ -18,17 +17,17 @@ async def _sapling_check(sentence: str) -> Optional[Dict]:
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
             resp = await client.post(
-                SAPLING_API_URL,
-                json={"key": SAPLING_API_KEY, "text": sentence, "session_id": "grammar_heroes"},
+                TFIVEBASE,
+                json={"key": TFIVEBASE, "text": sentence, "session_id": "grammar_heroes"},
             )
             if 200 <= resp.status_code < 300:
                 return resp.json()
             else:
-                logger.error(f"Sapling API error {resp.status_code}: {resp.text}")
-                return {"error": f"Sapling API error {resp.status_code}: {resp.text}"}
+                logger.error(f"T5 error")
+                return {"error": f"T5 error"}
     except Exception as e:
-        logger.exception("Sapling API call failed: %s", e)
-        return {"error": str(e)}
+        logger.exception("T5 failed: %s", e)
+        return {"error"}
 
 
 # ---------------- Feedback helpers ----------------
