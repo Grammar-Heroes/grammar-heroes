@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, Optional
+from pydantic import BaseModel
 
 class AdventureOut(BaseModel):
     id: str
@@ -65,7 +65,5 @@ class AdventureFinishIn(BaseModel):
     enemy_level: int
     enemies_defeated: int
     best_sentence: str | None = None
-
-    # ✅ NEW
     total_damage_dealt: int = 0
     total_damage_received: int = 0

@@ -5,9 +5,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app import crud  
 from typing import Optional
 
-# class DummyUser:
-#     id = 1
-#     email = "test@example.com"
+class DummyUser:
+    id = 1
+    email = "test@example.com"
 
 async def get_current_user(authorization: Optional[str] = Header(None), db: AsyncSession = Depends(get_db)):
     if not authorization:
