@@ -119,6 +119,6 @@ async def update_user_me(
         "total_enemies_defeated": user.total_enemies_defeated,
         "total_damage_received": user.total_damage_received,
         "total_damage_dealt": user.total_damage_dealt,
-        "powerpedia_unlocked": user.powerpedia_unlocked,
-        "tutorials_recorded": user.tutorials_recorded
+        # "powerpedia_unlocked": user.powerpedia_unlocked,
+        # "tutorials_recorded": user.tutorials_recorded
     }
