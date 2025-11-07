@@ -15,8 +15,21 @@ async def get_by_display_name(db: AsyncSession, name: str) -> User | None:
     res = await db.execute(select(User).where(User.display_name == name))
     return res.scalar_one_or_none()
 
-async def create_from_firebase(db: AsyncSession, uid: str, email: str | None, name: str | None) -> User:
-    user = User(firebase_uid=uid, email=email or f"uid-{uid}@unknown.local")
+async def create_from_firebase(
+    db: AsyncSession, 
+    uid: str, 
+    email: str | None, 
+    name: str | None,
+    auth_time: int  # <-- MODIFICATION: Added auth_time
+) -> User:
+    
+    user = User(
+        firebase_uid=uid, 
+        email=email or f"uid-{uid}@unknown.local",
+        # <-- MODIFICATION: Store the auth_time
+        active_session_auth_time=auth_time 
+    )
+    
     db.add(user)
     await db.commit()
     await db.refresh(user)

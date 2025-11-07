@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import String, Integer, DateTime, func, UniqueConstraint
+from sqlalchemy import String, Integer, DateTime, func, UniqueConstraint, BigInteger
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from app.core.db import Base
@@ -36,6 +36,12 @@ class User(Base):
     powerpedia_unlocked: Mapped[dict] = mapped_column(JSONB, default=list)
     tutorials_recorded: Mapped[dict] = mapped_column(JSONB, default=list) 
 
+    # for session management
+    active_session_auth_time: Mapped[int | None] = mapped_column(BigInteger, nullable=True, index=True)
+
+
+
+    
     __table_args__ = (
         UniqueConstraint("display_name", name="uq_users_display_name"),
     )

@@ -13,9 +13,28 @@ def init_firebase():
 def verify_id_token(id_token: str) -> dict:
     init_firebase()
     try:
-        decoded = auth.verify_id_token(id_token)
+        # --- MODIFICATION ---
+        # Add check_revoked=True
+        decoded = auth.verify_id_token(id_token, check_revoked=True)
+        # --- END MODIFICATION ---
+        
         print("Decoded token:", decoded)
         return decoded
+        
+    # --- MODIFICATION ---
+    # Catch this specific error
+    except auth.RevokedIdTokenError as exc:
+        print("Token was revoked:", exc)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="SESSION_TERMINATED", # Send specific "kicked" error
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from exc
+    # --- END MODIFICATION ---
+        
     except Exception as exc:  
         print("Token verification failed:", exc)
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Firebase token") from exc
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail="Invalid Firebase token"
+        ) from exc
