@@ -33,8 +33,8 @@ class User(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     # new fields
-    powerpedia_unlocked: Mapped[dict] = mapped_column(JSONB, default=list)
-    tutorials_recorded: Mapped[dict] = mapped_column(JSONB, default=list) 
+    powerpedia_unlocked: Mapped[dict] = mapped_column(JSONB, default=list, nullable=True)
+    tutorials_recorded: Mapped[dict] = mapped_column(JSONB, default=list, nullable=True) 
 
     # for session management
     active_session_auth_time: Mapped[int | None] = mapped_column(BigInteger, nullable=True, index=True)
