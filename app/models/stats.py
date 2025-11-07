@@ -27,7 +27,7 @@ class AdventureKCStat(Base):
     best_sentence: Mapped[str | None] = mapped_column(String(512), nullable=True)
     best_sentence_power: Mapped[int | None] = mapped_column(Integer, nullable=True)
     p_know: Mapped[int] = mapped_column(Integer, default=50)
-
+    
     adventure = relationship("Adventure", back_populates="kc_stats")
 
 

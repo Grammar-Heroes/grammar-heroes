@@ -32,6 +32,8 @@ async def me_route(me=Depends(get_current_user)):
         "total_enemies_defeated": me.total_enemies_defeated,
         "total_damage_received": me.total_damage_received,
         "total_damage_dealt": me.total_damage_dealt,
+        "powerpedia_unlocked": me.powerpedia_unlocked,
+        "tutorials_recorded": me.tutorials_recorded
     }
 
 @router.get("/display-name/availability", response_model=NameAvailabilityOut)
@@ -88,6 +90,8 @@ async def update_user_me(
         "total_enemies_defeated",
         "total_damage_received",
         "total_damage_dealt",
+        "powerpedia_unlocked",
+        "tutorials_recorded"
     ]
     for field in update_fields:
         value = getattr(payload, field, None)
@@ -115,4 +119,6 @@ async def update_user_me(
         "total_enemies_defeated": user.total_enemies_defeated,
         "total_damage_received": user.total_damage_received,
         "total_damage_dealt": user.total_damage_dealt,
+        "powerpedia_unlocked": user.powerpedia_unlocked,
+        "tutorials_recorded": user.tutorials_recorded
     }

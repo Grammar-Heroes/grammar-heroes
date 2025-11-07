@@ -23,6 +23,10 @@ class UserOut(BaseModel):
     total_damage_received: int = 0
     total_damage_dealt: int = 0
 
+    # New fields 2
+    powerpedia_unlocked: List[str] = []
+    tutorials_recorded: List[str] = []
+
     model_config = ConfigDict(from_attributes=True, json_encoders={UUID: lambda v: str(v)})
 
 
@@ -44,6 +48,10 @@ class UserUpdateIn(BaseModel):
     total_enemies_defeated: Optional[int]
     total_damage_received: Optional[int]
     total_damage_dealt: Optional[int]
+
+    # New fields 2
+    powerpedia_unlocked: Optional[List[str]]
+    tutorials_recorded: Optional[List[str]]
 
 
 class DisplayNameIn(BaseModel):

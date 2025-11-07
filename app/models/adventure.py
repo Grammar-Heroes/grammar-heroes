@@ -39,6 +39,6 @@ class Adventure(Base):
     node_types_cleared: Mapped[list] = mapped_column(JSONB, default=list)  # [normal, elite, boss]
     correct_submissions: Mapped[int] = mapped_column(Integer, default=0)
     incorrect_submissions: Mapped[int] = mapped_column(Integer, default=0)
-
+    
     kc_stats = relationship("AdventureKCStat", back_populates="adventure", cascade="all, delete-orphan")
     summary = relationship("AdventureSummary", back_populates="adventure", uselist=False, cascade="all, delete-orphan")
