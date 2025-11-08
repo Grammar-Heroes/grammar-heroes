@@ -145,27 +145,15 @@ async def get_current_user(
     
     if db_auth_time is None:
         # User exists, but from before you deployed this feature.
-        # "Upgrade" them to the new system.
         user.active_session_auth_time = token_auth_time
         await db.commit()
         await db.refresh(user)
-        
-        # --- MODIFICATION ---
-        # Return immediately. This user's session is now valid.
-        # This prevents the code from "falling through" to the next check.
         return user
-        # --- END MODIFICATION ---
 
     if token_auth_time > db_auth_time:
         # --- NEW LOGIN DETECTED ---
+        # Just update the DB time. This is the only action needed.
         user.active_session_auth_time = token_auth_time
-        
-        try:
-            auth.revoke_refresh_tokens(uid)
-            print(f"Revoked all refresh tokens for user {uid} due to new login.")
-        except Exception as e:
-            print(f"ERROR: Could not revoke tokens for {uid}: {e}")
-        
         await db.commit()
         await db.refresh(user)
         return user
@@ -176,6 +164,7 @@ async def get_current_user(
 
     elif token_auth_time < db_auth_time:
         # --- STALE SESSION DETECTED ---
+        # This correctly kicks the OLD device (Device 1).
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="SESSION_TERMINATED",
