@@ -136,24 +136,21 @@ async def finish(
 
     adv = await adv_crud.finish(db, adv, payload.status)
 
+    # --- MODIFICATIONS ---
+    
+    # 1. Apply data from payload
     adv.total_damage_dealt = payload.total_damage_dealt
     adv.total_damage_received = payload.total_damage_received
     adv.best_sentence = payload.best_sentence
-    adv.best_sentence_power = payload.best_sentence_power
+    
+    # 2. Use best_kc_id directly from the client
+    adv.best_kc_id = payload.best_kc_id 
+    
+    # 3. We have removed the 'best_sentence_power' line
 
-    res = await db.execute(select(AdventureKCStat).where(AdventureKCStat.adventure_id == adv.id))
-    rows = res.scalars().all()
-
-    best_kc, worst_kc = None, None
-    best_val, worst_val = -1, 1e9
-    for r in rows:
-        val = r.correct - r.incorrect
-        if val > best_val:
-            best_val, best_kc = val, r.kc_id
-        if val < worst_val:
-            worst_val, worst_kc = val, r.kc_id
-
-    adv.best_kc_id = best_kc
+    # 4. We have removed the database query and loop that calculated best_kc
+    
+    # --- END MODIFICATIONS ---
 
     summary = AdventureSummary(
         adventure_id=adv.id,
@@ -166,9 +163,13 @@ async def finish(
         level=payload.level,
         enemy_level=payload.enemy_level,
         enemies_defeated=payload.enemies_defeated,
-        best_kc_id=best_kc,
-        worst_kc_id=worst_kc,
+        
+        # --- MODIFICATION ---
+        best_kc_id=payload.best_kc_id,  # Use the value from the payload
+        worst_kc_id=None,               # Set to None since we are no longer calculating it
         best_sentence=payload.best_sentence,
+        # --- END MODIFICATION ---
+        
         total_damage_dealt=payload.total_damage_dealt,
         total_damage_received=payload.total_damage_received,
     )

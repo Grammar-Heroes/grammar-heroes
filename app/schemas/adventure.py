@@ -63,15 +63,23 @@ class AdventureProgressIn(BaseModel):
     best_kc_id: int | None = None
 
 class AdventureFinishIn(BaseModel):
+    # ... all your other fields ...
     status: str
     day_in_epoch_time: int
     highest_floor_cleared: int
     time_spent_seconds: int
-    items_collected: list[str]
-    node_types_cleared: list[int]
+    items_collected: list[str] | None = None
+    node_types_cleared: list[int] | None = None
     level: int
     enemy_level: int
     enemies_defeated: int
     best_sentence: str | None = None
-    total_damage_dealt: int = 0
-    total_damage_received: int = 0
+    total_damage_dealt: int
+    total_damage_received: int
+    
+    # --- MODIFICATION ---
+    best_kc_id: int | None = None # This is now sent by the client
+    # --- END MODIFICATION ---
+
+    class Config:
+        orm_mode = True
