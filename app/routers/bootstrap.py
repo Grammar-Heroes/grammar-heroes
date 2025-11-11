@@ -1,103 +1,8 @@
-# # app/routers/bootstrap.py
-# from fastapi import APIRouter, Depends
-# from sqlalchemy.ext.asyncio import AsyncSession
-
-# from app.core.security import get_current_user
-# from app.core.db import get_db
-# from app.schemas.bootstrap import BootstrapOut, HelperData
-# from app.schemas.user import UserOut
-# from app.schemas.adventure import AdventureOut
-# from app.crud import adventure as adv_crud
-
-# router = APIRouter()
-
-
-# def _ival(v, default=0) -> int:
-#     return int(v) if v is not None else default
-
-
-# @router.get("", response_model=BootstrapOut)
-# async def bootstrap(me=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-#     adv = await adv_crud.get_active_for_user(db, me.id)
-
-#     helper = HelperData(
-#         has_adventure=adv is not None,
-#         needs_display_name=me.display_name is None,
-#     )
-
-#     user_out = UserOut(
-#         id=str(me.id),
-#         email=me.email,
-#         display_name=me.display_name,
-#         profile_picture=me.profile_picture,
-#         cosmetic_equipped=me.cosmetic_equipped,
-#         cosmetic_unlocked=list(me.cosmetic_unlocked or []),
-#         hero_pass_level=_ival(getattr(me, "hero_pass_level", None), 0),
-#         hero_pass_exp=_ival(getattr(me, "hero_pass_exp", None), 0),
-#         hero_pass_tiers_unlocked=list(me.hero_pass_tiers_unlocked or []),
-#         achievements_unlocked=list(me.achievements_unlocked or []),
-#         currency_notes=_ival(getattr(me, "currency_notes", None), 0),
-#         total_adventures_cleared=_ival(
-#             getattr(me, "total_adventures_cleared", None), 0
-#         ),
-#         # New fields
-#         recorded_items=list(me.recorded_items or []),
-#         total_parry_counts=_ival(getattr(me, "total_parry_counts", None), 0),
-#         total_enemies_defeated=_ival(getattr(me, "total_enemies_defeated", None), 0),
-#         total_damage_received=_ival(getattr(me, "total_damage_received", None), 0),
-#         total_damage_dealt=_ival(getattr(me, "total_damage_dealt", None), 0),
-        
-#         # New fields 2
-#         powerpedia_unlocked=list(me.powerpedia_unlocked or []),  # <-- Added this line
-#         tutorials_recorded=list(me.tutorials_recorded or []),  # <-- Added this line
-#     )
-
-#     adv_out = None
-#     if adv:
-#         adv_out = AdventureOut(
-#             id=str(adv.id),
-#             user_id=str(adv.user_id),
-#             seed=(adv.seed or ""),
-#             state=adv.state or "in_progress",
-#             current_node_id=adv.current_node_id or "",
-#             current_node_kc=int(adv.current_node_kc or 1),
-#             cleared_nodes=list(adv.cleared_nodes or []),
-#             items_collected=list(adv.items_collected or []),
-#             node_name=adv.node_name or "",
-#             current_floor=int(adv.current_floor or 1),
-#             level=int(adv.level or 1),
-#             add_writing_level=int(adv.add_writing_level or 0),
-#             add_defense_level=int(adv.add_defense_level or 0),
-#             enemy_level=int(adv.enemy_level or 1),
-#             add_enemy_writing_level=int(adv.add_enemy_writing_level or 0),
-#             add_enemy_defense_level=int(adv.add_enemy_defense_level or 0),
-#             is_practice=bool(getattr(adv, "is_practice", False)),
-#             enemies_defeated=_ival(getattr(adv, "enemies_defeated", None), 0),
-#             reward_hero_pass_exp=_ival(
-#                 getattr(adv, "reward_hero_pass_exp", None), 0
-#             ),
-#             reward_notes=_ival(getattr(adv, "reward_notes", None), 0),
-#             node_types_cleared=list(adv.node_types_cleared or []),
-#             correct_submissions=_ival(getattr(adv, "correct_submissions", None), 0),
-#             incorrect_submissions=_ival(
-#                 getattr(adv, "incorrect_submissions", None), 0
-#             ),
-#             # New fields
-#             total_damage_dealt=_ival(getattr(adv, "total_damage_dealt", None), 0),
-#             total_damage_received=_ival(
-#                 getattr(adv, "total_damage_received", None), 0
-#             ),
-#         )
-
-#     return {
-#         "user": user_out,
-#         "helper": helper,
-#         "current_adventure": adv_out,
-#     }
-
+# app/routers/bootstrap.py
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+import json
 
 from app.core.security import get_current_user
 from app.core.db import get_db
@@ -112,7 +17,73 @@ from app.crud import adventure as adv_crud
 router = APIRouter()
 
 
-def _ival(v, default=0): return int(v) if v is not None else default
+def _ival(v, default: int = 0) -> int:
+    return int(v) if v is not None else default
+
+
+def _parse_items_collected(raw: str | None) -> list[str]:
+    """
+    Accepts either:
+      - JSON array string, e.g. ["item_any_branchblossom"]
+      - Comma-separated string, e.g. item_any_branchblossom,item_other
+    Returns a list of strings.
+    """
+    if not raw:
+        return []
+
+    s = raw.strip()
+    # JSON array form
+    if s.startswith("["):
+        try:
+            data = json.loads(s)
+            if isinstance(data, list):
+                return [str(x) for x in data]
+        except Exception:
+            # fall through to loose parsing
+            pass
+
+    # Fallback: comma-separated
+    parts = []
+    for part in s.split(","):
+        p = part.strip().strip("[]\"")
+        if p:
+            parts.append(p)
+    return parts
+
+
+def _parse_node_types(raw: str | None) -> list[int]:
+    """
+    Accepts either:
+      - JSON array string, e.g. [0,0,0]
+      - Comma-separated string, e.g. 0,0,0
+    Returns a list[int].
+    """
+    if not raw:
+        return []
+
+    s = raw.strip()
+    # JSON array form
+    if s.startswith("["):
+        try:
+            data = json.loads(s)
+            if isinstance(data, list):
+                return [int(x) for x in data if x is not None]
+        except Exception:
+            # fall through to loose parsing
+            pass
+
+    # Fallback: tolerant comma-split with bracket stripping
+    result: list[int] = []
+    for part in s.split(","):
+        p = part.strip().strip("[]")
+        if not p:
+            continue
+        try:
+            result.append(int(p))
+        except ValueError:
+            # ignore bad tokens instead of blowing up bootstrap
+            continue
+    return result
 
 
 @router.get("", response_model=BootstrapOut)
@@ -150,6 +121,7 @@ async def bootstrap(me=Depends(get_current_user), db: AsyncSession = Depends(get
     adventure_history: list[AdventureSummaryOut] = []
 
     if adv:
+        # Uses your AdventureOut.from_orm mapping so it stays aligned with Unity DTO
         adv_out = AdventureOut.from_orm(adv)
 
     # ─── FETCH ALL ADVENTURE SUMMARIES FOR THIS USER ───
@@ -166,9 +138,8 @@ async def bootstrap(me=Depends(get_current_user), db: AsyncSession = Depends(get
             day_in_epoch_time=_ival(summary.day_in_epoch_time, 0),
             highest_floor_cleared=_ival(summary.highest_floor_cleared, 0),
             time_spent_seconds=_ival(summary.time_spent_seconds, 0),
-            items_collected=summary.items_collected_json.split(",") if summary.items_collected_json else [],
-            node_types_cleared=[int(x) for x in summary.node_types_cleared_json.split(",") if x]
-            if summary.node_types_cleared_json else [],
+            items_collected=_parse_items_collected(summary.items_collected_json),
+            node_types_cleared=_parse_node_types(summary.node_types_cleared_json),
             level=_ival(summary.level, 0),
             enemy_level=_ival(summary.enemy_level, 0),
             enemies_defeated=_ival(summary.enemies_defeated, 0),
