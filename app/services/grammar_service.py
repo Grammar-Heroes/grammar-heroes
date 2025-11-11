@@ -147,6 +147,14 @@ async def check_sentence(
     if cached:
         logger.info("[CACHE HIT] %s", normalized)
         cached["from_cache"] = True
+        
+        # Ensure 'sentence_power' exists for older cache entries,
+        # otherwise default to None or recalculate.
+        if "sentence_power" not in cached:
+             # Simple recalculation to be safe
+             cached_correct = cached.get("is_correct", False)
+             cached["sentence_power"] = len(cached.get("best_candidate", "")) if cached_correct else None
+
         return cached
 
     t5_response = await _t5_check(sentence)
@@ -156,16 +164,26 @@ async def check_sentence(
     edits = t5_response.get("edits", []) if t5_response else []
     indices = _extract_error_indices(sentence, edits)
 
+    # --- NEW LOGIC ---
+    # Define "power" here.
+    # We only care about the power if the sentence is correct.
+    sentence_power: Optional[int] = None
+    if correct:
+        sentence_power = len(sentence)
+    # --- END NEW LOGIC ---
+
     result = {
         "is_correct": correct,
         "error_indices": indices,
         "feedback": feedback,
         "scores": {"t5_edits": len(edits)},
+        "sentence_power": sentence_power,  # <-- ADDED FIELD
         "candidates": [],
         "best_candidate": sentence,  # placeholder until KC bank returns
         "from_cache": False,
     }
 
+    # The new 'sentence_power' field will now be saved in the cache
     await set_sentence_cache(normalized, kc_id, result)
     return result
 

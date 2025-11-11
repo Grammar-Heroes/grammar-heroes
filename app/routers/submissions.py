@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, insert
 
+from app.models.user import User
 from app.core.db import get_db
 from app.core.security import get_current_user
 from app.schemas.submission import SubmissionIn, SubmissionOut
@@ -36,10 +37,11 @@ def _bkt_update(prior: float, is_correct: bool) -> float:
     return min(1.0, max(0.0, p_evidence + (1 - p_evidence) * BKT_LEARN))
 
 
+
 @router.post("", response_model=SubmissionOut)
 async def submit(
     payload: SubmissionIn,
-    me=Depends(get_current_user),
+    me: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ):
@@ -51,6 +53,7 @@ async def submit(
 
     # ─────────────────────────────────────────────
     # PRACTICE MODE  ✅ no UUID, no Adventure lookup
+    # (This section is unchanged)
     # ─────────────────────────────────────────────
     if payload.is_practice:
         # Grammar scoring
@@ -59,6 +62,8 @@ async def submit(
         feedback = list(res.get("feedback", []))
         error_indices = list(res.get("error_indices", []))
         from_cache = res.get("from_cache", False)
+        # Note: sentence_power from res is ignored here, as practice mode
+        # doesn't update adventure-level stats.
 
         # Read existing user-level mastery
         user_prior = 0.5
@@ -85,7 +90,7 @@ async def submit(
                         correct=1 if is_correct else 0,
                         incorrect=0 if is_correct else 1,
                         best_sentence=payload.sentence if is_correct else None,
-                        best_sentence_power=None,
+                        best_sentence_power=None, # UserKCMastery might not track power, or could use res.get("sentence_power")
                     )
                 )
             else:
@@ -104,6 +109,7 @@ async def submit(
                             if is_correct
                             else UserKCMastery.best_sentence
                         ),
+                        # best_sentence_power could also be updated here if needed
                     )
                 )
             await db.commit()
@@ -123,6 +129,7 @@ async def submit(
 
     # ─────────────────────────────────────────────
     # ADVENTURE MODE (normal behavior)
+    # (This section is MODIFIED)
     # ─────────────────────────────────────────────
     try:
         adv_id = uuid.UUID(payload.adventure_id)
@@ -146,6 +153,13 @@ async def submit(
     feedback = list(res.get("feedback", []))
     error_indices = list(res.get("error_indices", []))
     from_cache = res.get("from_cache", False)
+
+    # --- THIS IS THE FIX ---
+    # Get the sentence power calculated by the server-side check_sentence function
+    # It will be None if the sentence was incorrect.
+    sentence_power = res.get("sentence_power")
+    # --- END OF FIX ---
+
 
     # Read priors
     adv_prior = 0.5
@@ -180,7 +194,7 @@ async def submit(
             kc_id=payload.kc_id,
             is_correct=is_correct,
             best_sentence=payload.sentence,
-            best_power=None,
+            best_power=sentence_power,  # <-- Pass the server-calculated power
         )
 
         # Increment attempt counters

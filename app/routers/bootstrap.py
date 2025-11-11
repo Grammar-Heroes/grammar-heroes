@@ -37,14 +37,19 @@ async def bootstrap(me=Depends(get_current_user), db: AsyncSession = Depends(get
         hero_pass_tiers_unlocked=list(me.hero_pass_tiers_unlocked or []),
         achievements_unlocked=list(me.achievements_unlocked or []),
         currency_notes=_ival(getattr(me, "currency_notes", None), 0),
-        total_adventures_cleared=_ival(getattr(me, "total_adventures_cleared", None), 0),
-
+        total_adventures_cleared=_ival(
+            getattr(me, "total_adventures_cleared", None), 0
+        ),
         # New fields
         recorded_items=list(me.recorded_items or []),
         total_parry_counts=_ival(getattr(me, "total_parry_counts", None), 0),
         total_enemies_defeated=_ival(getattr(me, "total_enemies_defeated", None), 0),
         total_damage_received=_ival(getattr(me, "total_damage_received", None), 0),
         total_damage_dealt=_ival(getattr(me, "total_damage_dealt", None), 0),
+        
+        # New fields 2
+        powerpedia_unlocked=list(me.powerpedia_unlocked or []),  # <-- Added this line
+        tutorials_recorded=list(me.tutorials_recorded or []),  # <-- Added this line
     )
 
     adv_out = None
@@ -67,19 +72,22 @@ async def bootstrap(me=Depends(get_current_user), db: AsyncSession = Depends(get
             add_enemy_writing_level=int(adv.add_enemy_writing_level or 0),
             add_enemy_defense_level=int(adv.add_enemy_defense_level or 0),
             is_practice=bool(getattr(adv, "is_practice", False)),
-
             enemies_defeated=_ival(getattr(adv, "enemies_defeated", None), 0),
-            reward_hero_pass_exp=_ival(getattr(adv, "reward_hero_pass_exp", None), 0),
+            reward_hero_pass_exp=_ival(
+                getattr(adv, "reward_hero_pass_exp", None), 0
+            ),
             reward_notes=_ival(getattr(adv, "reward_notes", None), 0),
             node_types_cleared=list(adv.node_types_cleared or []),
             correct_submissions=_ival(getattr(adv, "correct_submissions", None), 0),
-            incorrect_submissions=_ival(getattr(adv, "incorrect_submissions", None), 0),
-
+            incorrect_submissions=_ival(
+                getattr(adv, "incorrect_submissions", None), 0
+            ),
             # New fields
             total_damage_dealt=_ival(getattr(adv, "total_damage_dealt", None), 0),
-            total_damage_received=_ival(getattr(adv, "total_damage_received", None), 0),
+            total_damage_received=_ival(
+                getattr(adv, "total_damage_received", None), 0
+            ),
         )
-
 
     return {
         "user": user_out,

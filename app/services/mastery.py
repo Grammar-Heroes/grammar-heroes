@@ -40,7 +40,7 @@ async def apply_submission_side_effects(
         if is_correct: row.correct += 1
         else:          row.incorrect += 1
 
-    # best sentence update
+    # best sentence update (for UserKCMastery)
     if best_power is not None and (row.best_sentence_power or -1) < int(best_power):
         row.best_sentence_power = int(best_power)
         if best_sentence:
@@ -64,6 +64,9 @@ async def apply_submission_side_effects(
             p_know=row.p_know,  # start from user-level prior
             correct=1 if is_correct else 0,
             incorrect=0 if is_correct else 1,
+            # Set initial best_sentence if this submission is correct
+            best_sentence=best_sentence if best_power is not None else None,
+            best_sentence_power=best_power if best_power is not None else None,
         )
         db.add(arow)
     else:
@@ -72,5 +75,14 @@ async def apply_submission_side_effects(
         arow.p_know = int(round(anew * 100))
         if is_correct: arow.correct += 1
         else:          arow.incorrect += 1
+
+    # --- THIS IS THE FIX ---
+    # You were missing the best sentence update logic for the AdventureKCStat
+    # It was only being applied to UserKCMastery
+    if best_power is not None and (arow.best_sentence_power or -1) < int(best_power):
+        arow.best_sentence_power = int(best_power)
+        if best_sentence:
+            arow.best_sentence = best_sentence
+    # --- END OF FIX ---
 
     await db.commit()
