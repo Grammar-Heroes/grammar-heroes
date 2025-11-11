@@ -57,10 +57,13 @@ async def start(
         node_types_cleared=list(adv.node_types_cleared or []),
         correct_submissions=adv.correct_submissions,
         incorrect_submissions=adv.incorrect_submissions,
-
-        # ─── NEW FIELDS ───
         total_damage_dealt=adv.total_damage_dealt,
         total_damage_received=adv.total_damage_received,
+        
+        # ─── NEW FIELDS ───
+        best_sentence=adv.best_sentence,
+        best_sentence_power=adv.best_sentence_power,
+        best_kc_id=adv.best_kc_id,
     )
 
 
@@ -104,10 +107,13 @@ async def progress(
         node_types_cleared=list(adv.node_types_cleared or []),
         correct_submissions=adv.correct_submissions,
         incorrect_submissions=adv.incorrect_submissions,
-
-        # ─── NEW FIELDS ───
         total_damage_dealt=adv.total_damage_dealt,
         total_damage_received=adv.total_damage_received,
+
+        # ─── NEW FIELDS ───
+        best_sentence=adv.best_sentence,
+        best_sentence_power=adv.best_sentence_power,
+        best_kc_id=adv.best_kc_id,
     )
 
 
@@ -130,9 +136,10 @@ async def finish(
 
     adv = await adv_crud.finish(db, adv, payload.status)
 
-    # ✅ persist damage totals
     adv.total_damage_dealt = payload.total_damage_dealt
     adv.total_damage_received = payload.total_damage_received
+    adv.best_sentence = payload.best_sentence
+    adv.best_sentence_power = payload.best_sentence_power
 
     res = await db.execute(select(AdventureKCStat).where(AdventureKCStat.adventure_id == adv.id))
     rows = res.scalars().all()
@@ -145,6 +152,8 @@ async def finish(
             best_val, best_kc = val, r.kc_id
         if val < worst_val:
             worst_val, worst_kc = val, r.kc_id
+
+    adv.best_kc_id = best_kc
 
     summary = AdventureSummary(
         adventure_id=adv.id,

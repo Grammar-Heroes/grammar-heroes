@@ -26,6 +26,10 @@ class AdventureOut(BaseModel):
     incorrect_submissions: int = 0
     total_damage_dealt: int = 0
     total_damage_received: int = 0
+    # ─── NEW FIELDS ───
+    best_sentence: str | None = None
+    best_sentence_power: int | None = None
+    best_kc_id: int | None = None
     
 
 class AdventureStartIn(BaseModel):
@@ -53,6 +57,10 @@ class AdventureProgressIn(BaseModel):
     incorrect_submissions: int | None = None
     total_damage_dealt: int | None = None
     total_damage_received: int | None = None
+    # ─── NEW FIELDS ───
+    best_sentence: str | None = None
+    best_sentence_power: int | None = None
+    best_kc_id: int | None = None
 
 class AdventureFinishIn(BaseModel):
     status: str

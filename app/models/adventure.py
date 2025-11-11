@@ -39,6 +39,11 @@ class Adventure(Base):
     node_types_cleared: Mapped[list] = mapped_column(JSONB, default=list)  # [normal, elite, boss]
     correct_submissions: Mapped[int] = mapped_column(Integer, default=0)
     incorrect_submissions: Mapped[int] = mapped_column(Integer, default=0)
+
+    # new
+    best_sentence: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    best_sentence_power: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    best_kc_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     
     kc_stats = relationship("AdventureKCStat", back_populates="adventure", cascade="all, delete-orphan")
     summary = relationship("AdventureSummary", back_populates="adventure", uselist=False, cascade="all, delete-orphan")

@@ -14,7 +14,6 @@ logger = logging.getLogger("grammar_cache")
 T5_API_URL = settings.T5_API_URL
 T5_API_KEY = settings.T5_API_KEY
 
-
 # ---------------- Kid-Friendly Error Messages ----------------
 ERROR_FRIENDLY: Dict[str, str] = {
 
@@ -187,87 +186,398 @@ async def check_sentence(
     await set_sentence_cache(normalized, kc_id, result)
     return result
 
+# #------------------------------------------------------------------------------------------------------------
+# #------------------------------------------------------------------------------------------------------------
+# #------------------------------------------------------------------------------------------------------------
+# #------------------------------------------------------------------------------------------------------------
+# #------------------------------------------------------------------------------------------------------------
+# #------------------------------------------------------------------------------------------------------------
+# #------------------------------------------------------------------------------------------------------------
+# #------------------------------------------------------------------------------------------------------------
+# #------------------------------------------------------------------------------------------------------------
+# #------------------------------------------------------------------------------------------------------------
+# #------------------------------------------------------------------------------------------------------------
+# #------------------------------------------------------------------------------------------------------------
+# #------------------------------------------------------------------------------------------------------------
+# #------------------------------------------------------------------------------------------------------------
+# #------------------------------------------------------------------------------------------------------------
+# # import logging
+# # import json
+# # import re
+# # from typing import Dict, List, Optional, Any
+# # import google.generativeai as genai
+# # from google.ai.generativelanguage_v1beta.types import content
+
+# # from app.utils.normalize import normalize_sentence
+# # from app.utils.redis_cache import get_sentence_cache, set_sentence_cache
+# # from app.core.config import settings
+
+# # logger = logging.getLogger("grammar_cache")
+
+# # # Configure Gemini
+# # genai.configure(api_key=settings.GEMINI_API_KEY)
+
+# # # Use Flash for speed and low latency in a gaming context
+# # MODEL_NAME = "gemini-2.5-flash"
+# # generation_config = {
+# #     "temperature": 0.3,
+# #     "response_mime_type": "application/json",
+# # }
+
+# # model = genai.GenerativeModel(
+# #     model_name=MODEL_NAME,
+# #     generation_config=generation_config,
+# #     system_instruction=(
+# #         "You are a friendly, encouraging elementary school English teacher grading a game "
+# #         "where kids rearrange word cards to form sentences. "
+# #         "Your feedback must be short, simple, and use kid-friendly language (avoid technical grammar terms like 'preposition' or 'auxiliary'). "
+# #         "If the sentence is wrong, gently guide them to the specific error without giving away the full answer immediately."
+# #     )
+# # )
+
+# # async def _gemini_check(sentence: str) -> Dict[str, Any]:
+# #     """Calls Gemini to check grammar and generate kid-friendly feedback."""
+    
+# #     # Pre-tokenize so Gemini refers to the exact same indices your frontend uses
+# #     tokens = [t.group() for t in re.finditer(r"\S+", sentence)]
+# #     token_map = {i: word for i, word in enumerate(tokens)}
+
+# #     prompt = f"""
+# #     Analyze this student sentence constructed from word cards: "{sentence}"
+    
+# #     The word tokens are indexed as follows: {json.dumps(token_map)}
+
+# #     Task:
+# #     1. Is it grammatically correct English? (true/false)
+# #     2. Identify the indices (0-based) of words that are in the wrong place, incorrect, or extra.
+# #     3. Provide ONE short, encouraging, kid-friendly feedback message (max 15 words).
+# #        - BAD feedback: "Missing auxiliary verb."
+# #        - GOOD feedback: "You need a helper word like 'is' here!"
+# #        - GOOD feedback: "Oops! The action word is in the wrong spot."
+
+# #     Respond EXACTLY in this JSON structure:
+# #     {{
+# #         "is_correct": boolean,
+# #         "error_indices": [int], 
+# #         "feedback": "string",
+# #         "corrected_sentence": "string"
+# #     }}
+# #     """
+
+# #     try:
+# #         # Use async generate_content if your wrapping infrastructure supports it, 
+# #         # otherwise standard sync call is okay for low-traffic prototypes.
+# #         # For true async in FastAPI, run this in a threadpool or use Gemini's async client if available in latest versions.
+# #         response = await model.generate_content_async(prompt)
+# #         result = json.loads(response.text)
+# #         return result
+# #     except Exception as e:
+# #         logger.exception("Gemini check failed: %s", e)
+# #         # Fallback safe response so the game doesn't crash
+# #         return {
+# #             "is_correct": False,
+# #             "error_indices": [],
+# #             "feedback": "Something went wrong, try again!",
+# #             "corrected_sentence": sentence
+# #         }
+
+# # # ---------------- Public Entry ----------------
+# # async def check_sentence(
+# #     sentence: str,
+# #     kc_id: Optional[int] = None,
+# #     tier_id: Optional[int] = None,
+# # ) -> Dict[str, Any]:
+# #     """Main API: caching, model call, result shaping."""
+# #     normalized = normalize_sentence(sentence)
+# #     cached = await get_sentence_cache(normalized, kc_id)
+
+# #     if cached:
+# #         logger.info("[CACHE HIT] %s", normalized)
+# #         cached["from_cache"] = True
+# #         return cached
+
+# #     # Call Gemini instead of T5
+# #     gemini_response = await _gemini_check(sentence)
+
+# #     # Shape result to match your frontend's expected contract
+# #     result = {
+# #         "is_correct": gemini_response.get("is_correct", False),
+# #         "error_indices": gemini_response.get("error_indices", []),
+# #         # Ensure feedback is always a list to match old T5 implementation if needed by frontend
+# #         "feedback": [gemini_response.get("feedback", "Try again!")], 
+# #         "scores": {
+# #             # You can ask Gemini for a confidence score if you want, 
+# #             # for now we just use 0 or 1 based on correctness
+# #              "correctness": 1.0 if gemini_response.get("is_correct") else 0.0
+# #         },
+# #         "candidates": [], 
+# #         "best_candidate": gemini_response.get("corrected_sentence", sentence),
+# #         "from_cache": False,
+# #     }
+
+# #     await set_sentence_cache(normalized, kc_id, result)
+# #     return result
+# #------------------------------------------------------------------------------------------------------------
+# #------------------------------------------------------------------------------------------------------------
+# #------------------------------------------------------------------------------------------------------------
+# #------------------------------------------------------------------------------------------------------------
+# #------------------------------------------------------------------------------------------------------------
+# #------------------------------------------------------------------------------------------------------------
+# #------------------------------------------------------------------------------------------------------------
+# #------------------------------------------------------------------------------------------------------------
+# #------------------------------------------------------------------------------------------------------------
+# #------------------------------------------------------------------------------------------------------------
+# #------------------------------------------------------------------------------------------------------------
+# #------------------------------------------------------------------------------------------------------------
+# #------------------------------------------------------------------------------------------------------------
+# #------------------------------------------------------------------------------------------------------------
+
 # import logging
-# import json
 # import re
 # from typing import Dict, List, Optional, Any
-# import google.generativeai as genai
-# from google.ai.generativelanguage_v1beta.types import content
+
+# import httpx
 
 # from app.utils.normalize import normalize_sentence
 # from app.utils.redis_cache import get_sentence_cache, set_sentence_cache
 # from app.core.config import settings
 
+
 # logger = logging.getLogger("grammar_cache")
 
-# # Configure Gemini
-# genai.configure(api_key=settings.GEMINI_API_KEY)
+# # T5_API_URL = settings.T5_API_URL
+# # T5_API_KEY = settings.T5_API_KEY
 
-# # Use Flash for speed and low latency in a gaming context
-# MODEL_NAME = "gemini-2.5-flash"
-# generation_config = {
-#     "temperature": 0.3,
-#     "response_mime_type": "application/json",
+# # --- START: CORRECTED GRAMMARBOT SETTINGS ---
+# # These values now match your working curl command.
+# GRAMMARBOT_API_URL = "https://grammarbot.p.rapidapi.com/check"
+# GRAMMARBOT_API_HOST = "grammarbot.p.rapidapi.com" # <-- This was the main error
+# GRAMMARBOT_API_KEY = "c0ca6cfb8dmsh971fa50f4c6cba8p1cfef5jsn22529c6f1678" # <-- This is your new, working key
+# # --- END: CORRECTED GRAMMARBOT SETTINGS ---
+
+
+# # ---------------- Kid-Friendly Error Messages ----------------
+# # This list is kept as-is, as our adapter will feed it the error codes it expects.
+# ERROR_FRIENDLY: Dict[str, str] = {
+#     "M:PART": "A word is missing.",
+#     "M:PUNCT": "You forgot punctuation.",
+#     "M:CONJ": "A joining word is missing.",
+#     "M:DET": "A helper word is missing.",
+#     "M:DET:ART": "You need a, an, or the.",
+#     "M:PREP": "A place word is missing.",
+#     "M:PRON": "A name word is missing.",
+#     "M:VERB": "An action word is missing.",
+#     "M:ADJ": "A describing word is missing.",
+#     "M:NOUN": "A thing word is missing.",
+#     "M:NOUN:POSS": "You need 's here.",
+#     "M:OTHER": "Something is missing.",
+
+#     "R:PART": "This word doesn’t fit.",
+#     "R:PUNCT": "The punctuation needs fixing.",
+#     "R:ORTH": "This spelling looks wrong.",
+#     "R:SPELL": "Spelling mistake here.",
+#     "R:WO": "Words are in the wrong order.",
+#     "R:MORPH": "This word sounds wrong.",
+#     "R:ADV": "Use a word ending in -ly.",
+#     "R:CONTR": "The shortened word is wrong.",
+#     "R:CONJ": "The joining word is wrong.",
+#     "R:DET": "The helper word is wrong.",
+#     "R:DET:ART": "Use a, an, or the correctly.",
+#     "R:PREP": "The place word is wrong.",
+#     "R:PRON": "The name word is wrong.",
+#     "R:VERB:FORM": "The action word needs changing.",
+#     "R:VERB:TENSE": "The time of the action is wrong.",
+#     "R:VERB:SVA": "This verb doesn’t match the subject.",
+#     "R:ADJ:FORM": "The describing word needs fixing.",
+#     "R:NOUN:INFL": "The plural is wrong.",
+#     "R:NOUN:NUM": "The number word is wrong.",
+#     "R:OTHER": "This part needs fixing.",
+
+#     "U:PART": "There’s an extra word.",
+#     "U:PUNCT": "There’s extra punctuation.",
+#     "U:ADV": "There’s an extra -ly word.",
+#     "U:CONTR": "There’s an extra shortened word.",
+#     "U:CONJ": "There’s an extra joining word.",
+#     "U:DET": "There’s an extra helper word.",
+#     "U:DET:ART": "There’s an extra a, an, or the.",
+#     "U:PREP": "There’s an extra place word.",
+#     "U:PRON": "There’s an extra name word.",
+#     "U:VERB": "There’s an extra action word.",
+#     "U:ADJ": "There’s an extra describing word.",
+#     "U:NOUN": "There’s an extra thing word.",
+#     "U:NOUN:POSS": "There’s an extra 's.",
+#     "U:OTHER": "There’s something extra here.",
 # }
 
-# model = genai.GenerativeModel(
-#     model_name=MODEL_NAME,
-#     generation_config=generation_config,
-#     system_instruction=(
-#         "You are a friendly, encouraging elementary school English teacher grading a game "
-#         "where kids rearrange word cards to form sentences. "
-#         "Your feedback must be short, simple, and use kid-friendly language (avoid technical grammar terms like 'preposition' or 'auxiliary'). "
-#         "If the sentence is wrong, gently guide them to the specific error without giving away the full answer immediately."
-#     )
-# )
+# DEFAULT_FRIENDLY = "Something needs fixing."
 
-# async def _gemini_check(sentence: str) -> Dict[str, Any]:
-#     """Calls Gemini to check grammar and generate kid-friendly feedback."""
-    
-#     # Pre-tokenize so Gemini refers to the exact same indices your frontend uses
-#     tokens = [t.group() for t in re.finditer(r"\S+", sentence)]
-#     token_map = {i: word for i, word in enumerate(tokens)}
 
-#     prompt = f"""
-#     Analyze this student sentence constructed from word cards: "{sentence}"
-    
-#     The word tokens are indexed as follows: {json.dumps(token_map)}
+# # ---------------- T5 API Call (Replaced) ----------------
+# # (Original function commented out)
+# # ...
 
-#     Task:
-#     1. Is it grammatically correct English? (true/false)
-#     2. Identify the indices (0-based) of words that are in the wrong place, incorrect, or extra.
-#     3. Provide ONE short, encouraging, kid-friendly feedback message (max 15 words).
-#        - BAD feedback: "Missing auxiliary verb."
-#        - GOOD feedback: "You need a helper word like 'is' here!"
-#        - GOOD feedback: "Oops! The action word is in the wrong spot."
 
-#     Respond EXACTLY in this JSON structure:
-#     {{
-#         "is_correct": boolean,
-#         "error_indices": [int], 
-#         "feedback": "string",
-#         "corrected_sentence": "string"
-#     }}
+# # ---------------- NEW: GrammarBot API Call ----------------
+
+# def _transform_grammarbot_response(data: Dict[str, Any]) -> Dict[str, Any]:
 #     """
+#     Transforms GrammarBot's 'matches' into the 'edits' structure
+#     that the rest of our code (e.g., Sapling) expects.
+#     """
+#     edits = []
+#     if "matches" not in data:
+#         return {"edits": []}
 
-#     try:
-#         # Use async generate_content if your wrapping infrastructure supports it, 
-#         # otherwise standard sync call is okay for low-traffic prototypes.
-#         # For true async in FastAPI, run this in a threadpool or use Gemini's async client if available in latest versions.
-#         response = await model.generate_content_async(prompt)
-#         result = json.loads(response.text)
-#         return result
-#     except Exception as e:
-#         logger.exception("Gemini check failed: %s", e)
-#         # Fallback safe response so the game doesn't crash
-#         return {
-#             "is_correct": False,
-#             "error_indices": [],
-#             "feedback": "Something went wrong, try again!",
-#             "corrected_sentence": sentence
+#     for match in data.get("matches", []):
+#         start = match.get("offset", 0)
+#         length = match.get("length", 0)
+#         end = start + length
+
+#         # Attempt to map GrammarBot rule ID to our existing ERROR_FRIENDLY map
+#         # e.g., GrammarBot 'VERB_SVA' -> 'R:VERB:SVA'
+#         # e.g., GrammarBot 'MORFOLOGIK_RULE_EN_US' -> 'R:SPELL' (a common one)
+#         rule_id = match.get("rule", {}).get("id", "OTHER")
+        
+#         # This is a guess. We'll prefix with 'R:' (Replace) as it's the most common.
+#         # This allows some rules like 'R:VERB:SVA' to match our ERROR_FRIENDLY map.
+#         error_type = f"R:{rule_id}"
+        
+#         # Handle specific common rules
+#         if "MORFOLOGIK" in rule_id or "SPELL" in rule_id:
+#             error_type = "R:SPELL"
+#         elif "PUNCT" in rule_id:
+#             error_type = "R:PUNCT"
+#         # From your successful test: e.g. "I has..."
+#         elif "NON3PRS_VERB" in rule_id:
+#             error_type = "R:VERB:SVA" 
+#         # From your successful test: e.g. "a apple"
+#         elif "EN_A_VS_AN" in rule_id:
+#             error_type = "R:DET:ART"
+#         # --- NEW RULE ---
+#         # For errors like "there is two problems"
+#         elif "VERB_SVA" in rule_id or "SUBJ_VERB_AGR" in rule_id:
+#             error_type = "R:VERB:SVA"
+#         # --- END NEW RULE ---
+            
+#         edit = {
+#             "start": start,
+#             "end": end,
+#             "error_type": error_type,
+#             # GrammarBot puts replacements in an array of { "value": "..." }
+#             "replacements": [r.get("value") for r in match.get("replacements", []) if "value" in r]
 #         }
+#         edits.append(edit)
 
-# # ---------------- Public Entry ----------------
+#     return {"edits": edits}
+
+
+# async def _grammarbot_check(sentence: str) -> Dict[str, Any]:
+#     """Calls the GrammarBot API and transforms the response."""
+#     try:
+#         headers = {
+#             "x-rapidapi-key": GRAMMARBOT_API_KEY,
+#             "x-rapidapi-host": GRAMMARBOT_API_HOST,
+#             "content-type": "application/x-www-form-urlencoded",
+#         }
+#         # Note: GrammarBot uses form data (text=...&language=...), not JSON
+#         payload = {
+#             "text": sentence,
+#             "language": "en-US" # Defaulting to en-US
+#         }
+        
+#         async with httpx.AsyncClient(timeout=15.0) as client:
+#             resp = await client.post(
+#                 GRAMMARBOT_API_URL,
+#                 data=payload,
+#                 headers=headers
+#             )
+            
+#             if resp.status_code < 300:
+#                 raw_data = resp.json()
+#                 # Transform the response to match the old T5/Sapling structure
+#                 transformed_data = _transform_grammarbot_response(raw_data)
+#                 return transformed_data
+            
+#             # This is the error you were seeing
+#             logger.error("GramZmarBot error %s: %s", resp.status_code, resp.text)
+#             return {"error": "GrammarBot error"}
+            
+#     except Exception as e:
+#         logger.exception("GrammarBot check failed: %s", e)
+#         return {"error": f"GrammarBot check failed: {e}"}
+
+
+# # ---------------- Feedback Extraction (Unchanged) ----------------
+# def _extract_feedback(data: Dict[str, Any]) -> List[str]:
+#     """Turns Sapling/T5-style edits into kid-friendly messages."""
+#     feedback: List[str] = []
+
+#     # Server error case
+#     if not data or ("error" in data and "edits" not in data):
+#         feedback.append(str(data.get("error", "Unknown error")))
+#         return feedback
+
+#     edits = data.get("edits", [])
+#     if not edits and "matches" not in data: # Check if it's an untransformed error
+#         feedback.append(DEFAULT_FRIENDLY)
+#         return feedback
+
+#     for edit in edits:
+#         error_type = edit.get("error_type", "")
+#         message = ERROR_FRIENDLY.get(error_type, DEFAULT_FRIENDLY)
+#         # Add the specific mapped message
+#         feedback.append(message)
+        
+#     # If no messages were added but there were edits, add default
+#     if not feedback and edits:
+#          feedback.append(DEFAULT_FRIENDLY)
+
+#     return feedback
+
+
+# # ---------------- Error Index Extraction (Unchanged) ----------------
+# def _extract_error_indices(sentence: str, edits: List[Dict[str, Any]]) -> List[int]:
+#     """Returns token indices where mistakes are located."""
+#     if not edits:
+#         return []
+#     tokens = list(re.finditer(r"\S+", sentence))
+#     error_indices = set()
+#     sentence_length = len(sentence)
+
+#     for edit in edits:
+#         start, end = edit.get("start", 0), edit.get("end", 0)
+        
+#         # --- NEW LOGIC ---
+#         # Ignore "edits" that span the entire sentence, as they are not
+#         # specific enough to be useful and just highlight everything.
+#         # We give a 3-char buffer for punctuation, etc.
+#         if start == 0 and end >= (sentence_length - 3):
+#             continue # Skip this broad, unhelpful edit
+#         # --- END NEW LOGIC ---
+
+#         for i, tok in enumerate(tokens):
+#             s, e = tok.span()
+#             # Check for overlap
+#             if e > start and s < end:
+#                 error_indices.add(i)
+
+#     return sorted(error_indices)
+
+
+# # ---------------- Correctness Check (Unchanged) ----------------
+# def _is_correct(data: Dict[str, Any]) -> bool:
+#     """Sentence is correct if there are zero edits."""
+#     # Check the transformed 'edits' list
+#     if data and "edits" in data:
+#         return len(data["edits"]) == 0
+#     # Fallback for untransformed data (shouldn't happen)
+#     if data and "matches" in data:
+#          return len(data["matches"]) == 0
+#     # If error or invalid data, assume not correct
+#     return False
+
+
+# # ---------------- Public Entry (Modified) ----------------
 # async def check_sentence(
 #     sentence: str,
 #     kc_id: Optional[int] = None,
@@ -280,24 +590,38 @@ async def check_sentence(
 #     if cached:
 #         logger.info("[CACHE HIT] %s", normalized)
 #         cached["from_cache"] = True
+        
+#         # Ensure 'sentence_power' exists for older cache entries,
+#         if "sentence_power" not in cached:
+#             cached_correct = cached.get("is_correct", False)
+#             cached["sentence_power"] = len(cached.get("best_candidate", "")) if cached_correct else None
+
 #         return cached
 
-#     # Call Gemini instead of T5
-#     gemini_response = await _gemini_check(sentence)
+#     # --- MODIFIED LINE ---
+#     # Call GrammarBot instead of T5
+#     api_response = await _grammarbot_check(sentence)
+#     # --- END MODIFICATION ---
 
-#     # Shape result to match your frontend's expected contract
+#     feedback = _extract_feedback(api_response)
+#     correct = _is_correct(api_response)
+#     edits = api_response.get("edits", []) if api_response else []
+#     indices = _extract_error_indices(sentence, edits)
+
+#     # --- NEW LOGIC (Unchanged) ---
+#     sentence_power: Optional[int] = None
+#     if correct:
+#         sentence_power = len(sentence)
+#     # --- END NEW LOGIC ---
+
 #     result = {
-#         "is_correct": gemini_response.get("is_correct", False),
-#         "error_indices": gemini_response.get("error_indices", []),
-#         # Ensure feedback is always a list to match old T5 implementation if needed by frontend
-#         "feedback": [gemini_response.get("feedback", "Try again!")], 
-#         "scores": {
-#             # You can ask Gemini for a confidence score if you want, 
-#             # for now we just use 0 or 1 based on correctness
-#              "correctness": 1.0 if gemini_response.get("is_correct") else 0.0
-#         },
-#         "candidates": [], 
-#         "best_candidate": gemini_response.get("corrected_sentence", sentence),
+#         "is_correct": correct,
+#         "error_indices": indices,
+#         "feedback": feedback,
+#         "scores": {"t5_edits": len(edits)}, # Kept key name for compatibility
+#         "sentence_power": sentence_power,
+#         "candidates": [],
+#         "best_candidate": sentence, 
 #         "from_cache": False,
 #     }
 
