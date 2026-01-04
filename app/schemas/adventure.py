@@ -1,8 +1,9 @@
 from pydantic import BaseModel
+from uuid import UUID
 
 class AdventureOut(BaseModel):
-    id: str
-    user_id: str
+    id: UUID
+    user_id: UUID
     seed: str
     state: str
     current_node_id: str | None
