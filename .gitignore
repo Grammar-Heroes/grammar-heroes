@@ -1,2 +1,30 @@
-/sensitive
+# --- Python Basics ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- Virtual Environments (Crucial for you) ---
+# This prevents your local library folder from being uploaded again
+.venv/
+venv/
+env/
+ENV/
+
+# --- Environment Variables & Secrets (Security) ---
+# NEVER commit this file. It contains your Database Password.
 .env
+.env.local
+
+# --- Database & Migrations ---
+# If you use SQLite locally, ignore the file db
+*.sqlite3
+*.db
+
+# --- IDE Settings (Optional but recommended) ---
+# Keeps your personal editor settings out of the repo
+.vscode/
+.idea/
+
+# --- OS Junk files ---
+.DS_Store
+Thumbs.db
