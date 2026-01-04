@@ -30,7 +30,10 @@ class AdventureOut(BaseModel):
     best_sentence: str | None = None
     best_sentence_power: int | None = None
     best_kc_id: int | None = None
-    
+
+    # --- ADD THIS CONFIG BLOCK ---
+    class Config:
+        from_attributes = True
 
 class AdventureStartIn(BaseModel):
     seed: str
@@ -78,8 +81,9 @@ class AdventureFinishIn(BaseModel):
     total_damage_received: int
     
     # --- MODIFICATION ---
-    best_kc_id: int | None = None # This is now sent by the client
+    best_kc_id: int | None = None 
     # --- END MODIFICATION ---
 
     class Config:
-        orm_mode = True
+        # Changed from 'orm_mode' to 'from_attributes' for Pydantic V2 consistency
+        from_attributes = True
