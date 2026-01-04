@@ -12,7 +12,20 @@ if config.config_file_name is not None:
 
 
 def get_url():
-     return os.getenv("DATABASE_URL_SYNC") or os.getenv("DATABASE_URL")
+    # 1. Try to get a specific sync URL first
+    url = os.getenv("DATABASE_URL_SYNC")
+    
+    # 2. If not found, get the main one
+    if not url:
+        url = os.getenv("DATABASE_URL")
+        
+    # 3. SAFETY FIX: If the URL says "asyncpg", switch it to standard "psycopg"
+    # This lets Alembic run synchronously while your App runs asynchronously.
+    if url and "asyncpg" in url:
+        url = url.replace("+asyncpg", "+psycopg") 
+        # Or just url.replace("+asyncpg", "") if you rely on the default driver
+        
+    return url
 
 
 from app.core.db import Base
